@@ -3,7 +3,7 @@ set -euo pipefail
 
 cd "$(dirname "$0")/.."
 ROOT="$(pwd)"
-VERSION="0.1.0"
+VERSION="${1:-0.0.0}"
 ARCH="amd64"
 
 echo "[1/4] Installing system dependencies..."

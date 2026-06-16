@@ -17,8 +17,12 @@ permissions:
   contents: write
 
 jobs:
-  build-and-release:
-    runs-on: windows-latest
+  # ── 1. 버전 계산 & 태그 생성 ────────────────────────────────────────────────
+  compute-version:
+    runs-on: ubuntu-latest
+    outputs:
+      tag:     ${{ steps.version.outputs.tag }}
+      version: ${{ steps.version.outputs.version }}
 
     steps:
       - name: Checkout
@@ -31,7 +35,6 @@ jobs:
         id: version
         shell: bash
         run: |
-          # Latest semver tag, default to v0.0.0 if none exists
           LATEST=$(git tag --sort=-v:refname | grep -E '^v[0-9]+\.[0-9]+\.[0-9]+$' | head -1)
           LATEST="${LATEST:-v0.0.0}"
           echo "Previous tag: $LATEST"
@@ -48,7 +51,7 @@ jobs:
 
           TAG="v${MAJOR}.${MINOR}.${PATCH}"
           VER="${MAJOR}.${MINOR}.${PATCH}"
-          echo "tag=$TAG"   >> $GITHUB_OUTPUT
+          echo "tag=$TAG"     >> $GITHUB_OUTPUT
           echo "version=$VER" >> $GITHUB_OUTPUT
           echo "Next version: $TAG"
 
@@ -59,6 +62,15 @@ jobs:
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git tag "${{ steps.version.outputs.tag }}"
           git push origin "${{ steps.version.outputs.tag }}"
+
+  # ── 2-A. Windows 빌드 ────────────────────────────────────────────────────────
+  build-windows:
+    needs: compute-version
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -79,20 +91,91 @@ jobs:
         shell: powershell
         run: |
           $iscc = "C:\Program Files (x86)\Inno Setup 6\ISCC.exe"
-          & $iscc /DAppVersion=${{ steps.version.outputs.version }} build\installer.iss
+          & $iscc /DAppVersion=${{ needs.compute-version.outputs.version }} build\installer.iss
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
-      - name: Rename standalone exe with version
+      - name: Rename standalone exe
         shell: powershell
+        run: Rename-Item dist\LLMCreditMonitor.exe "LLMCreditMonitor-${{ needs.compute-version.outputs.version }}-windows.exe"
+
+      - name: Upload Windows artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-dist
+          path: |
+            dist/LLMCreditMonitor-${{ needs.compute-version.outputs.version }}-windows.exe
+            dist/LLMCreditMonitor-Setup-${{ needs.compute-version.outputs.version }}.exe
+
+  # ── 2-B. Ubuntu 빌드 ─────────────────────────────────────────────────────────
+  build-linux:
+    needs: compute-version
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install system dependencies
         run: |
-          Rename-Item dist\LLMCreditMonitor.exe "LLMCreditMonitor-${{ steps.version.outputs.version }}.exe"
+          sudo apt-get update -qq
+          sudo apt-get install -y \
+            libappindicator3-1 \
+            libayatana-appindicator3-1 \
+            dpkg-dev fakeroot \
+            || true
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+          cache: pip
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt pyinstaller
+
+      - name: Build executable
+        run: python -m PyInstaller --clean --noconfirm build/llmcreditmonitor.spec
+
+      - name: Build .deb package
+        run: bash build/build_linux.sh ${{ needs.compute-version.outputs.version }}
+
+      - name: Rename standalone binary
+        run: mv dist/LLMCreditMonitor dist/LLMCreditMonitor-${{ needs.compute-version.outputs.version }}-linux
+
+      - name: Upload Linux artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: linux-dist
+          path: |
+            dist/LLMCreditMonitor-${{ needs.compute-version.outputs.version }}-linux
+            dist/llmcreditmonitor_${{ needs.compute-version.outputs.version }}_amd64.deb
+
+  # ── 3. GitHub Release 생성 ───────────────────────────────────────────────────
+  release:
+    needs: [compute-version, build-windows, build-linux]
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Download Windows artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: windows-dist
+          path: dist/
+
+      - name: Download Linux artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: linux-dist
+          path: dist/
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          name: LLM Credit Monitor ${{ steps.version.outputs.tag }}
-          tag_name: ${{ steps.version.outputs.tag }}
+          name: LLM Credit Monitor ${{ needs.compute-version.outputs.tag }}
+          tag_name: ${{ needs.compute-version.outputs.tag }}
           generate_release_notes: true
           files: |
-            dist/LLMCreditMonitor-${{ steps.version.outputs.version }}.exe
-            dist/LLMCreditMonitor-Setup-${{ steps.version.outputs.version }}.exe
+            dist/LLMCreditMonitor-${{ needs.compute-version.outputs.version }}-windows.exe
+            dist/LLMCreditMonitor-Setup-${{ needs.compute-version.outputs.version }}.exe
+            dist/LLMCreditMonitor-${{ needs.compute-version.outputs.version }}-linux
+            dist/llmcreditmonitor_${{ needs.compute-version.outputs.version }}_amd64.deb
