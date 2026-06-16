@@ -176,6 +176,7 @@ jobs:
         with:
           name: LLM Credit Monitor ${{ needs.compute-version.outputs.tag }}
           tag_name: ${{ needs.compute-version.outputs.tag }}
+          draft: false
           generate_release_notes: true
           body: |
             ## 설치 및 실행 방법
