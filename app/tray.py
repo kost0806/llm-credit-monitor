@@ -87,7 +87,7 @@ class TrayApp:
         self._icon = pystray.Icon(
             "LLMCreditMonitor",
             icon=initial_image,
-            title="LLM Credit Monitor — 불러오는 중...",
+            title="LLM Credit Monitor - Loading..." if sys.platform != "win32" else "LLM Credit Monitor — 불러오는 중...",
             menu=self._build_menu(),
         )
         update_thread = threading.Thread(
