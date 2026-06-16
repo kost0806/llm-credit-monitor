@@ -23,6 +23,10 @@ Claude와 ChatGPT API 크레딧 사용량을 실시간으로 모니터링하는 
 
 `LLMCreditMonitor-x.x.x-windows.exe`를 다운로드해 더블클릭으로 바로 실행합니다 (설치 불필요).
 
+> **⚠️ 자동 시작 등록 전 주의 (Windows 단독 실행 파일)**
+> 설정에서 "로그인 시 자동 시작"을 켜면 **현재 파일 경로**가 레지스트리에 기록됩니다.
+> 파일을 나중에 이동하면 자동 시작이 동작하지 않으므로, **최종 위치에 파일을 놓은 뒤** 자동 시작을 등록하세요.
+
 ### Ubuntu / Debian
 
 **.deb 패키지 (권장)**
@@ -42,6 +46,18 @@ sudo apt-get install libayatana-appindicator3-1
 chmod +x LLMCreditMonitor-x.x.x-linux
 ./LLMCreditMonitor-x.x.x-linux &
 ```
+
+> **⚠️ 자동 시작 등록 전 주의 (Ubuntu 단독 실행 파일)**
+> 설정에서 "로그인 시 자동 시작"을 켜면 **현재 파일 위치**가 `~/.config/autostart/`에 기록됩니다.
+> 파일을 나중에 이동하면 자동 시작이 동작하지 않으므로, **최종 위치에 파일을 놓은 뒤** 자동 시작을 등록하세요.
+>
+> ```bash
+> # 권장: /usr/local/bin 또는 ~/bin 같은 고정 경로에 먼저 이동
+> mv LLMCreditMonitor-x.x.x-linux ~/.local/bin/llmcreditmonitor
+> chmod +x ~/.local/bin/llmcreditmonitor
+> ~/.local/bin/llmcreditmonitor &
+> # 이후 설정 → 로그인 시 자동 시작 활성화
+> ```
 
 ## 로컬 사용량 로그 경로
 

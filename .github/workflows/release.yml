@@ -192,6 +192,10 @@ jobs:
             1. `LLMCreditMonitor-${{ needs.compute-version.outputs.version }}-windows.exe` 다운로드
             2. 더블클릭으로 바로 실행 (설치 불필요)
 
+            > ⚠️ **자동 시작 등록 전 주의 (단독 실행 파일)**
+            > 설정에서 "로그인 시 자동 시작"을 켜면 **현재 파일 경로**가 레지스트리에 기록됩니다.
+            > 파일을 나중에 이동하면 자동 시작이 동작하지 않으므로, **최종 위치에 파일을 놓은 뒤** 자동 시작을 등록하세요.
+
             ---
 
             ### Ubuntu / Debian
@@ -205,13 +209,22 @@ jobs:
 
             **단독 실행 파일**
             ```bash
+            # 시스템 트레이 라이브러리 설치 (미설치 시)
+            sudo apt-get install libayatana-appindicator3-1
+
             chmod +x LLMCreditMonitor-${{ needs.compute-version.outputs.version }}-linux
             ./LLMCreditMonitor-${{ needs.compute-version.outputs.version }}-linux &
             ```
 
-            > 시스템 트레이 지원을 위해 `libappindicator3-1` 또는 `libayatana-appindicator3-1` 패키지가 필요합니다.
+            > ⚠️ **자동 시작 등록 전 주의 (단독 실행 파일)**
+            > 설정에서 "로그인 시 자동 시작"을 켜면 **현재 파일 위치**가 `~/.config/autostart/`에 기록됩니다.
+            > 파일을 나중에 이동하면 자동 시작이 동작하지 않으므로, **최종 위치에 파일을 놓은 뒤** 자동 시작을 등록하세요.
             > ```bash
-            > sudo apt-get install libayatana-appindicator3-1
+            > # 권장: 고정 경로로 먼저 이동
+            > mv LLMCreditMonitor-${{ needs.compute-version.outputs.version }}-linux ~/.local/bin/llmcreditmonitor
+            > chmod +x ~/.local/bin/llmcreditmonitor
+            > ~/.local/bin/llmcreditmonitor &
+            > # 이후 설정 → 로그인 시 자동 시작 활성화
             > ```
           files: |
             dist/LLMCreditMonitor-${{ needs.compute-version.outputs.version }}-windows.exe
