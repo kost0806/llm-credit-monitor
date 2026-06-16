@@ -15,7 +15,7 @@ from pathlib import Path
 logger = logging.getLogger(__name__)
 
 _NAME = "Pretendard"
-_FALLBACKS_WIN   = ["Malgun Gothic", "맑은 고딕", "Arial Unicode MS", "Arial"]
+_FALLBACKS_WIN   = ["Malgun Gothic", "맑은 고딕", "Arial Unicode MS", "Arial", "DejaVu Sans"]
 _FALLBACKS_LINUX = ["NanumGothic", "Noto Sans KR", "Noto CJK KR", "UnDotum", "DejaVu Sans"]
 
 
@@ -135,6 +135,8 @@ def configure_mpl_font() -> None:
             logger.debug("matplotlib font: %s", name)
             break
     else:
-        logger.warning("No Korean font for matplotlib; CJK may render as boxes")
+        # DejaVu Sans is always bundled with matplotlib — safe hard fallback
+        plt.rcParams["font.family"] = "DejaVu Sans"
+        logger.warning("No Korean font found; falling back to DejaVu Sans")
 
     plt.rcParams["axes.unicode_minus"] = False
