@@ -29,6 +29,7 @@ a = Analysis(
         'pystray._win32',
         'pystray._xorg',
         'pystray._darwin',
+        'pystray._appindicator',
         'PIL._tkinter_finder',
         'matplotlib.backends.backend_tkagg',
         'matplotlib.backends._backend_tk',

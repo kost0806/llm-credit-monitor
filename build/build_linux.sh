@@ -10,8 +10,11 @@ echo "[1/4] Installing system dependencies..."
 sudo apt-get update -qq
 sudo apt-get install -y \
     python3-pip \
+    python3-gi \
     libappindicator3-1 \
     libayatana-appindicator3-1 \
+    gir1.2-appindicator3-0.1 \
+    gir1.2-ayatanaappindicator3-0.1 \
     dpkg-dev \
     fakeroot \
     || true   # ayatana may not exist on 22.04; ignore errors for individual pkgs
@@ -45,7 +48,7 @@ Package: llmcreditmonitor
 Version: ${VERSION}
 Architecture: ${ARCH}
 Maintainer: LLM Credit Monitor
-Depends: libappindicator3-1 | libayatana-appindicator3-1
+Depends: libappindicator3-1 | libayatana-appindicator3-1, gir1.2-appindicator3-0.1 | gir1.2-ayatanaappindicator3-0.1
 Description: LLM API credit usage system tray monitor
  Monitors Claude and ChatGPT API credit usage in real time.
 EOF
