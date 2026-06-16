@@ -177,6 +177,41 @@ jobs:
           name: LLM Credit Monitor ${{ needs.compute-version.outputs.tag }}
           tag_name: ${{ needs.compute-version.outputs.tag }}
           generate_release_notes: true
+          body: |
+            ## 설치 및 실행 방법
+
+            ### Windows
+
+            **인스톨러 (권장)**
+            1. `LLMCreditMonitor-Setup-${{ needs.compute-version.outputs.version }}.exe` 다운로드
+            2. 실행 후 설치 마법사 진행
+            3. 설치 완료 후 자동 시작 (시스템 트레이에 아이콘 표시)
+
+            **단독 실행 파일**
+            1. `LLMCreditMonitor-${{ needs.compute-version.outputs.version }}-windows.exe` 다운로드
+            2. 더블클릭으로 바로 실행 (설치 불필요)
+
+            ---
+
+            ### Ubuntu / Debian
+
+            **.deb 패키지 (권장)**
+            ```bash
+            sudo dpkg -i llmcreditmonitor_${{ needs.compute-version.outputs.version }}_amd64.deb
+            sudo apt-get install -f   # 의존성 자동 해결
+            llmcreditmonitor &
+            ```
+
+            **단독 실행 파일**
+            ```bash
+            chmod +x LLMCreditMonitor-${{ needs.compute-version.outputs.version }}-linux
+            ./LLMCreditMonitor-${{ needs.compute-version.outputs.version }}-linux &
+            ```
+
+            > 시스템 트레이 지원을 위해 `libappindicator3-1` 또는 `libayatana-appindicator3-1` 패키지가 필요합니다.
+            > ```bash
+            > sudo apt-get install libayatana-appindicator3-1
+            > ```
           files: |
             dist/LLMCreditMonitor-${{ needs.compute-version.outputs.version }}-windows.exe
             dist/LLMCreditMonitor-Setup-${{ needs.compute-version.outputs.version }}.exe
