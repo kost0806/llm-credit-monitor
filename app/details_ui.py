@@ -161,10 +161,9 @@ def run_details_window(worker, open_flag: threading.Event) -> None:
         tk.Label(chart_header, text=label, bg=_CANVAS, fg=_MUTED,
                  font=FONT_BODY_SM).pack(side="right", padx=(8, 2))
 
-    fig, ax = plt.subplots(figsize=(8.8, 2.6))
+    fig, ax = plt.subplots(figsize=(8.8, 2.6), dpi=96)
     fig.patch.set_facecolor(_CANVAS)
     ax.set_facecolor(_CANVAS)
-    fig.tight_layout(pad=1.0)
 
     canvas = FigureCanvasTkAgg(fig, master=chart_surface)
     canvas.get_tk_widget().pack(fill="both", expand=True, pady=(6, 0))

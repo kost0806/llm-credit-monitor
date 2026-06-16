@@ -141,3 +141,7 @@ def configure_mpl_font() -> None:
         logger.debug("No Korean font found; using DejaVu Sans")
 
     plt.rcParams["axes.unicode_minus"] = False
+    # Cap DPI to 96 to prevent FT_Err_Raster_Overflow on HiDPI Linux displays.
+    # Korean font glyphs have complex outlines that overflow FreeType's rasterizer
+    # pool when rendered at the high DPIs that TkAgg picks up from the display server.
+    plt.rcParams["figure.dpi"] = 96
