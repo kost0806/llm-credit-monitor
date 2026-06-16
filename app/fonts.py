@@ -126,6 +126,9 @@ def configure_mpl_font() -> None:
 
     available = {f.name for f in fm.fontManager.ttflist}
 
+    # DejaVu Sans is always bundled with matplotlib — set it first as a safe base
+    plt.rcParams["font.family"] = "DejaVu Sans"
+
     candidates = [_NAME] + (
         _FALLBACKS_WIN if sys.platform == "win32" else _FALLBACKS_LINUX
     )
@@ -135,8 +138,6 @@ def configure_mpl_font() -> None:
             logger.debug("matplotlib font: %s", name)
             break
     else:
-        # DejaVu Sans is always bundled with matplotlib — safe hard fallback
-        plt.rcParams["font.family"] = "DejaVu Sans"
-        logger.warning("No Korean font found; falling back to DejaVu Sans")
+        logger.debug("No Korean font found; using DejaVu Sans")
 
     plt.rcParams["axes.unicode_minus"] = False
