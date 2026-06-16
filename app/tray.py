@@ -108,7 +108,7 @@ class TrayApp:
             Menu.SEPARATOR,
             MenuItem("갱신 (Refresh)", self._on_refresh),
             MenuItem("설정 (Settings)", self._on_settings),
-            MenuItem("자세히 보기 (Details)", self._on_details),
+            MenuItem("자세히 보기 (Details)", self._on_details, default=True),
             Menu.SEPARATOR,
             MenuItem("종료 (Exit)", self._on_exit),
         )
@@ -174,6 +174,7 @@ class TrayApp:
     # ── Icon update loop ──────────────────────────────────────────────────────
 
     def _update_loop(self) -> None:
+        _last_tip = ""
         while self._icon is not None:
             snapshot = self._worker.get_snapshot()
             if snapshot is not None:
@@ -185,8 +186,15 @@ class TrayApp:
                         self._icon.icon = make_icon(label)
                     except Exception as e:
                         logger.warning("Icon update failed: %s", e)
+                tip = _format_tooltip(snapshot)
                 try:
-                    self._icon.title = _format_tooltip(snapshot)
+                    self._icon.title = tip
                 except Exception:
                     pass
+                if tip != _last_tip:
+                    _last_tip = tip
+                    try:
+                        self._icon.update_menu()
+                    except Exception:
+                        pass
             time.sleep(1)
