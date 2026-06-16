@@ -124,6 +124,10 @@ jobs:
           sudo apt-get install -y \
             libappindicator3-1 \
             libayatana-appindicator3-1 \
+            gir1.2-appindicator3-0.1 \
+            gir1.2-ayatanaappindicator3-0.1 \
+            libgirepository1.0-dev \
+            gobject-introspection \
             dpkg-dev fakeroot \
             || true
 
@@ -134,7 +138,7 @@ jobs:
           cache: pip
 
       - name: Install dependencies
-        run: pip install -r requirements.txt pyinstaller
+        run: pip install -r requirements.txt pyinstaller PyGObject
 
       - name: Build executable
         run: python -m PyInstaller --clean --noconfirm build/llmcreditmonitor.spec

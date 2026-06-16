@@ -26,9 +26,18 @@ a = Analysis(
         'app.tray',
         'app.settings_ui',
         'app.details_ui',
+        # pystray backends — all three included; PyInstaller silently skips unavailable ones
         'pystray._win32',
-        'pystray._xorg',
         'pystray._darwin',
+        'pystray._xorg',
+        'pystray._appindicator',  # AppIndicator3 / AyatanaAppIndicator3 (Linux GTK tray)
+        'pystray._gtk',
+        # gi.repository — needed by pystray._appindicator on Linux
+        'gi',
+        'gi.repository.GLib',
+        'gi.repository.GObject',
+        'gi.repository.Gtk',
+        'gi.repository.Gdk',
         'PIL._tkinter_finder',
         'matplotlib.backends.backend_tkagg',
         'matplotlib.backends._backend_tk',
