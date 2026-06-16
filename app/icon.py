@@ -6,6 +6,9 @@ from PIL import Image, ImageDraw, ImageFont
 logger = logging.getLogger(__name__)
 
 ICON_SIZE = 64
+# Linux system trays typically expect 22-24 px icons.  Rendering at full size
+# and then downsampling gives better quality than rendering small directly.
+_LINUX_TRAY_SIZE = 22
 
 _COLORS = {
     "low":    "#2ecc71",  # 0–49%
@@ -117,6 +120,9 @@ def make_icon(label: str) -> Image.Image:
         y = (ICON_SIZE - h) / 2
 
     draw.text((x, y), label, fill="white", font=font)
+
+    if sys.platform != "win32":
+        img = img.resize((_LINUX_TRAY_SIZE, _LINUX_TRAY_SIZE), Image.LANCZOS)
     return img
 
 
