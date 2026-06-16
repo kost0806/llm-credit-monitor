@@ -1,9 +1,17 @@
 name: Release
 
 on:
-  push:
-    tags:
-      - 'v*.*.*'
+  workflow_dispatch:
+    inputs:
+      bump:
+        description: 'Version bump type'
+        required: true
+        default: 'patch'
+        type: choice
+        options:
+          - patch
+          - minor
+          - major
 
 permissions:
   contents: write
@@ -15,15 +23,42 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          fetch-tags: true
+          fetch-depth: 0
 
-      - name: Extract version
+      - name: Compute next version
         id: version
         shell: bash
         run: |
-          TAG="${GITHUB_REF_NAME}"          # e.g. v0.0.1
-          VER="${TAG#v}"                    # e.g. 0.0.1
+          # Latest semver tag, default to v0.0.0 if none exists
+          LATEST=$(git tag --sort=-v:refname | grep -E '^v[0-9]+\.[0-9]+\.[0-9]+$' | head -1)
+          LATEST="${LATEST:-v0.0.0}"
+          echo "Previous tag: $LATEST"
+
+          MAJOR=$(echo "$LATEST" | sed 's/v//' | cut -d. -f1)
+          MINOR=$(echo "$LATEST" | sed 's/v//' | cut -d. -f2)
+          PATCH=$(echo "$LATEST" | sed 's/v//' | cut -d. -f3)
+
+          case "${{ inputs.bump }}" in
+            major) MAJOR=$((MAJOR+1)); MINOR=0; PATCH=0 ;;
+            minor) MINOR=$((MINOR+1)); PATCH=0 ;;
+            patch) PATCH=$((PATCH+1)) ;;
+          esac
+
+          TAG="v${MAJOR}.${MINOR}.${PATCH}"
+          VER="${MAJOR}.${MINOR}.${PATCH}"
           echo "tag=$TAG"   >> $GITHUB_OUTPUT
           echo "version=$VER" >> $GITHUB_OUTPUT
+          echo "Next version: $TAG"
+
+      - name: Create and push tag
+        shell: bash
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git tag "${{ steps.version.outputs.tag }}"
+          git push origin "${{ steps.version.outputs.tag }}"
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -50,8 +85,7 @@ jobs:
       - name: Rename standalone exe with version
         shell: powershell
         run: |
-          $ver = "${{ steps.version.outputs.version }}"
-          Rename-Item dist\LLMCreditMonitor.exe "LLMCreditMonitor-$ver.exe"
+          Rename-Item dist\LLMCreditMonitor.exe "LLMCreditMonitor-${{ steps.version.outputs.version }}.exe"
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
