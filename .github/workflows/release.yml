@@ -35,13 +35,16 @@ jobs:
         id: version
         shell: bash
         run: |
-          LATEST=$(git tag --sort=-v:refname | grep -E '^v[0-9]+\.[0-9]+\.[0-9]+$' | head -1)
+          # grep exits 1 when no tags exist — || true prevents pipefail from aborting
+          LATEST=$(git tag --sort=-v:refname | grep -E '^v[0-9]+\.[0-9]+\.[0-9]+$' | head -1 || true)
           LATEST="${LATEST:-v0.0.0}"
           echo "Previous tag: $LATEST"
 
-          MAJOR=$(echo "$LATEST" | sed 's/v//' | cut -d. -f1)
-          MINOR=$(echo "$LATEST" | sed 's/v//' | cut -d. -f2)
-          PATCH=$(echo "$LATEST" | sed 's/v//' | cut -d. -f3)
+          # Pure bash splitting — avoids sed/cut pipefail edge cases
+          VER="${LATEST#v}"
+          MAJOR="${VER%%.*}"; VER="${VER#*.}"
+          MINOR="${VER%%.*}"
+          PATCH="${VER#*.}"
 
           case "${{ inputs.bump }}" in
             major) MAJOR=$((MAJOR+1)); MINOR=0; PATCH=0 ;;
