@@ -31,6 +31,14 @@ Claude와 ChatGPT API 크레딧 사용량을 실시간으로 모니터링하는 
 
 **.deb 패키지 (권장)**
 
+> **⚠️ 실행 전 필수: 시스템 트레이 라이브러리 설치**
+> 미설치 시 `UnicodeEncodeError`가 발생하며 앱이 시작되지 않습니다.
+> ```bash
+> sudo apt-get install libayatana-appindicator3-1
+> # 또는
+> sudo apt-get install libappindicator3-1
+> ```
+
 ```bash
 sudo dpkg -i llmcreditmonitor_x.x.x_amd64.deb
 sudo apt-get install -f   # 의존성 자동 해결
@@ -40,9 +48,6 @@ llmcreditmonitor &
 **단독 실행 파일**
 
 ```bash
-# 시스템 트레이 라이브러리 설치 (미설치 시)
-sudo apt-get install libayatana-appindicator3-1
-
 chmod +x LLMCreditMonitor-x.x.x-linux
 ./LLMCreditMonitor-x.x.x-linux &
 ```

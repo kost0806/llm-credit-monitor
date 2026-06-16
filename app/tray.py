@@ -1,4 +1,5 @@
 import logging
+import sys
 import threading
 import time
 from typing import Callable, Optional
@@ -11,10 +12,17 @@ from app.worker import UsageSnapshot, UsageWorker
 
 logger = logging.getLogger(__name__)
 
+# X11 backend (Linux without libappindicator) only supports latin-1.
+# Use ASCII-safe bar characters when not on Windows.
+if sys.platform == "win32":
+    _FILLED, _EMPTY, _DASH = "█", "░", "—"
+else:
+    _FILLED, _EMPTY, _DASH = "#", "-", "-"
+
 
 def _bar(pct: float, width: int = 10) -> str:
     filled = max(0, min(width, round(pct / 100 * width)))
-    return "█" * filled + "░" * (width - filled)
+    return _FILLED * filled + _EMPTY * (width - filled)
 
 
 def _format_tooltip(snapshot: UsageSnapshot) -> str:
@@ -30,30 +38,30 @@ def _format_tooltip(snapshot: UsageSnapshot) -> str:
 
 def _menu_claude_header(snapshot: Optional[UsageSnapshot]) -> str:
     if snapshot is None:
-        return "Claude   ░░░░░░░░░░   —"
+        return f"Claude   {_EMPTY * 10}   {_DASH}"
     pct = snapshot.claude.percent_of_limit
     return f"Claude   {_bar(pct)}  {pct:5.1f}%"
 
 
 def _menu_claude_detail(snapshot: Optional[UsageSnapshot]) -> str:
     if snapshot is None:
-        return "  불러오는 중..."
+        return "  Loading..."
     c = snapshot.claude
-    return f"  오늘 ${c.today_usd:.2f}  이번달 ${c.monthly_usd:.2f} / ${c.limit_usd:.2f}  잔여 ${c.remaining_usd:.2f}"
+    return f"  Today ${c.today_usd:.2f}  Monthly ${c.monthly_usd:.2f} / ${c.limit_usd:.2f}  Left ${c.remaining_usd:.2f}"
 
 
 def _menu_chatgpt_header(snapshot: Optional[UsageSnapshot]) -> str:
     if snapshot is None:
-        return "ChatGPT  ░░░░░░░░░░   —"
+        return f"ChatGPT  {_EMPTY * 10}   {_DASH}"
     pct = snapshot.chatgpt.percent_of_limit
     return f"ChatGPT  {_bar(pct)}  {pct:5.1f}%"
 
 
 def _menu_chatgpt_detail(snapshot: Optional[UsageSnapshot]) -> str:
     if snapshot is None:
-        return "  불러오는 중..."
+        return "  Loading..."
     g = snapshot.chatgpt
-    return f"  오늘 ${g.today_usd:.2f}  이번달 ${g.monthly_usd:.2f} / ${g.limit_usd:.2f}  잔여 ${g.remaining_usd:.2f}"
+    return f"  Today ${g.today_usd:.2f}  Monthly ${g.monthly_usd:.2f} / ${g.limit_usd:.2f}  Left ${g.remaining_usd:.2f}"
 
 
 class TrayApp:
