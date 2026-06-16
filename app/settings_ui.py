@@ -282,6 +282,8 @@ def run_settings_window(
 
     interval_var = tk.StringVar(value=str(cfg.update_interval))
 
+    vcmd = (root.register(lambda s: s.isdigit() or s == ""), "%P")
+
     tk.Label(interval_row, text="주기 (초):", bg=_CANVAS, fg=_INK,
              font=FONT_BODY).pack(side="left")
 
@@ -290,6 +292,7 @@ def run_settings_window(
         width=6, font=FONT_BODY,
         bg=_CANVAS, fg=_INK, insertbackground=_INK,
         relief="solid", bd=1,
+        validate="key", validatecommand=vcmd,
     )
     interval_entry.pack(side="left", padx=(8, 4))
 
