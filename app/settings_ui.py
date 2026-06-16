@@ -168,7 +168,7 @@ def run_settings_window(
     import tkinter as tk
     from tkinter import ttk, messagebox
     from app.fonts import ui_font
-    from app.presets import TIER_NAMES, CLAUDE_TIERS, CHATGPT_TIERS
+    from app.presets import PRESET_NAMES, CLAUDE_PRESETS, CHATGPT_PRESETS
     from app.icon import set_window_icon
 
     root = tk.Tk()
@@ -225,15 +225,15 @@ def run_settings_window(
     # Tier
     tier_col = tk.Frame(claude_row, bg=_CANVAS)
     tier_col.pack(side="left", padx=(0, 20))
-    _field_label(tier_col, "티어", FONT_CAPTION)
+    _field_label(tier_col, "Preset", FONT_CAPTION)
     claude_tier_var = tk.StringVar(value=cfg.claude_tier)
     claude_limit_var = tk.StringVar(value=f"{cfg.claude_limit:.2f}")  # defined here for trace
 
     def _on_claude_tier(*_):
-        claude_limit_var.set(f"{CLAUDE_TIERS.get(claude_tier_var.get(), 5000.0):.2f}")
+        claude_limit_var.set(f"{CLAUDE_PRESETS.get(claude_tier_var.get(), 446.0):.2f}")
 
     claude_tier_var.trace_add("write", _on_claude_tier)   # fires on any change, not just <<ComboboxSelected>>
-    claude_tier_wrap, _ = _option_menu(tier_col, claude_tier_var, TIER_NAMES, FONT_BODY_SM, min_width=10)
+    claude_tier_wrap, _ = _option_menu(tier_col, claude_tier_var, PRESET_NAMES, FONT_BODY_SM, min_width=10)
     claude_tier_wrap.pack(anchor="w", pady=(4, 0))
 
     # Limit
@@ -254,15 +254,15 @@ def run_settings_window(
 
     tier_col2 = tk.Frame(chatgpt_row, bg=_CANVAS)
     tier_col2.pack(side="left", padx=(0, 20))
-    _field_label(tier_col2, "티어", FONT_CAPTION)
+    _field_label(tier_col2, "Preset", FONT_CAPTION)
     chatgpt_tier_var = tk.StringVar(value=cfg.chatgpt_tier)
     chatgpt_limit_var = tk.StringVar(value=f"{cfg.chatgpt_limit:.2f}")
 
     def _on_chatgpt_tier(*_):
-        chatgpt_limit_var.set(f"{CHATGPT_TIERS.get(chatgpt_tier_var.get(), 5000.0):.2f}")
+        chatgpt_limit_var.set(f"{CHATGPT_PRESETS.get(chatgpt_tier_var.get(), 446.0):.2f}")
 
     chatgpt_tier_var.trace_add("write", _on_chatgpt_tier)
-    chatgpt_tier_wrap, _ = _option_menu(tier_col2, chatgpt_tier_var, TIER_NAMES, FONT_BODY_SM, min_width=10)
+    chatgpt_tier_wrap, _ = _option_menu(tier_col2, chatgpt_tier_var, PRESET_NAMES, FONT_BODY_SM, min_width=10)
     chatgpt_tier_wrap.pack(anchor="w", pady=(4, 0))
 
     limit_col2 = tk.Frame(chatgpt_row, bg=_CANVAS)
@@ -280,31 +280,24 @@ def run_settings_window(
     interval_row = tk.Frame(body, bg=_CANVAS)
     interval_row.pack(fill="x")
 
-    interval_var = tk.IntVar(value=cfg.update_interval)
-    value_lbl = tk.Label(interval_row, text=f"{cfg.update_interval}초",
-                         bg=_CANVAS, fg=_INK, font=FONT_BODY, width=6)
-    value_lbl.pack(side="right")
+    interval_var = tk.StringVar(value=str(cfg.update_interval))
 
-    tk.Label(interval_row, text="10초", bg=_CANVAS, fg=_MUTED,
-             font=FONT_BODY_SM).pack(side="left")
+    vcmd = (root.register(lambda s: s.isdigit() or s == ""), "%P")
 
-    def _on_slide(val):
-        v = int(float(val))
-        value_lbl.config(text=f"{v}초")
+    tk.Label(interval_row, text="주기 (초):", bg=_CANVAS, fg=_INK,
+             font=FONT_BODY).pack(side="left")
 
-    slider = tk.Scale(
-        interval_row, variable=interval_var,
-        from_=10, to=600, orient="horizontal",
-        command=_on_slide,
-        bg=_CANVAS, fg=_BODY, troughcolor=_HAIRLINE,
-        activebackground=_RAUSCH, highlightthickness=0,
-        showvalue=False, sliderlength=18, width=6,
-        relief="flat", bd=0,
+    interval_entry = tk.Entry(
+        interval_row, textvariable=interval_var,
+        width=6, font=FONT_BODY,
+        bg=_CANVAS, fg=_INK, insertbackground=_INK,
+        relief="solid", bd=1,
+        validate="key", validatecommand=vcmd,
     )
-    slider.pack(side="left", fill="x", expand=True, padx=6)
+    interval_entry.pack(side="left", padx=(8, 4))
 
-    tk.Label(interval_row, text="600초", bg=_CANVAS, fg=_MUTED,
-             font=FONT_BODY_SM).pack(side="left")
+    tk.Label(interval_row, text="초  (10~600)", bg=_CANVAS, fg=_MUTED,
+             font=FONT_BODY).pack(side="left")
 
     _hairline(body, pady=(16, 0))
 
@@ -338,7 +331,7 @@ def run_settings_window(
             claude_limit=c_limit,
             chatgpt_tier=chatgpt_tier_var.get(),
             chatgpt_limit=g_limit,
-            update_interval=max(10, min(600, interval_var.get())),
+            update_interval=max(10, min(600, int(interval_var.get()) if interval_var.get().isdigit() else 60)),
             auto_start=autostart_var.get(),
         )
         config_setter(new_cfg)
