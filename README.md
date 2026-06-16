@@ -32,11 +32,13 @@ Claude와 ChatGPT API 크레딧 사용량을 실시간으로 모니터링하는 
 **.deb 패키지 (권장)**
 
 > **⚠️ 실행 전 필수: 시스템 트레이 라이브러리 설치**
-> 미설치 시 `UnicodeEncodeError`가 발생하며 앱이 시작되지 않습니다.
+> 미설치 시 앱이 시작되지 않거나 트레이 메뉴가 동작하지 않습니다.
 > ```bash
-> sudo apt-get install libayatana-appindicator3-1
-> # 또는
-> sudo apt-get install libappindicator3-1
+> sudo apt-get install \
+>   libayatana-appindicator3-1 \
+>   gir1.2-ayatanaappindicator3-0.1 \
+>   python3-gi \
+>   python3-gi-cairo
 > ```
 
 ```bash
