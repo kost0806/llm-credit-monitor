@@ -128,6 +128,9 @@ jobs:
             gir1.2-ayatanaappindicator3-0.1 \
             libgirepository1.0-dev \
             gobject-introspection \
+            libcairo2-dev \
+            pkg-config \
+            python3-dev \
             dpkg-dev fakeroot \
             || true
 
