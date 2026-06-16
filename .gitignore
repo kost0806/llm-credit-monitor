@@ -1,0 +1,34 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+.venv/
+venv/
+*.egg-info/
+dist/
+build/llmcreditmonitor/
+build/__pycache__/
+
+# PyInstaller
+*.spec.bak
+build/*.toc
+build/*.pkg
+build/*.exe
+build/warn-*.txt
+build/xref-*.html
+
+# IDE
+.idea/
+.vscode/
+*.iml
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+build_log.txt
+
+# Config (user-specific, written at runtime)
+config.json
