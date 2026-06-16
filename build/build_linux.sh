@@ -14,10 +14,18 @@ sudo apt-get install -y \
     libayatana-appindicator3-1 \
     dpkg-dev \
     fakeroot \
+    fonts-dejavu-core \
     || true   # ayatana may not exist on 22.04; ignore errors for individual pkgs
 
 echo "[2/4] Installing Python dependencies..."
 pip install -r requirements.txt pyinstaller
+
+echo "[2.5/4] Bundling DejaVuSansMono-Bold.ttf into assets..."
+DEJAVU_SRC="/usr/share/fonts/truetype/dejavu/DejaVuSansMono-Bold.ttf"
+if [ -f "$DEJAVU_SRC" ] && [ ! -f "assets/DejaVuSansMono-Bold.ttf" ]; then
+    cp "$DEJAVU_SRC" assets/DejaVuSansMono-Bold.ttf
+    echo "  Copied DejaVuSansMono-Bold.ttf → assets/"
+fi
 
 echo "[3/4] Building executable with PyInstaller..."
 pyinstaller --clean --noconfirm build/llmcreditmonitor.spec
