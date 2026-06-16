@@ -108,7 +108,7 @@ class TrayApp:
             Menu.SEPARATOR,
             MenuItem("갱신 (Refresh)", self._on_refresh),
             MenuItem("설정 (Settings)", self._on_settings),
-            MenuItem("자세히 보기 (Details)", self._on_details, default=True),
+            MenuItem("자세히 보기 (Details)", self._on_details),
             Menu.SEPARATOR,
             MenuItem("종료 (Exit)", self._on_exit),
         )
