@@ -168,7 +168,7 @@ def run_settings_window(
     import tkinter as tk
     from tkinter import ttk, messagebox
     from app.fonts import ui_font
-    from app.presets import TIER_NAMES, CLAUDE_TIERS, CHATGPT_TIERS
+    from app.presets import PRESET_NAMES, CLAUDE_PRESETS, CHATGPT_PRESETS
     from app.icon import set_window_icon
 
     root = tk.Tk()
@@ -225,15 +225,15 @@ def run_settings_window(
     # Tier
     tier_col = tk.Frame(claude_row, bg=_CANVAS)
     tier_col.pack(side="left", padx=(0, 20))
-    _field_label(tier_col, "티어", FONT_CAPTION)
+    _field_label(tier_col, "Preset", FONT_CAPTION)
     claude_tier_var = tk.StringVar(value=cfg.claude_tier)
     claude_limit_var = tk.StringVar(value=f"{cfg.claude_limit:.2f}")  # defined here for trace
 
     def _on_claude_tier(*_):
-        claude_limit_var.set(f"{CLAUDE_TIERS.get(claude_tier_var.get(), 5000.0):.2f}")
+        claude_limit_var.set(f"{CLAUDE_PRESETS.get(claude_tier_var.get(), 446.0):.2f}")
 
     claude_tier_var.trace_add("write", _on_claude_tier)   # fires on any change, not just <<ComboboxSelected>>
-    claude_tier_wrap, _ = _option_menu(tier_col, claude_tier_var, TIER_NAMES, FONT_BODY_SM, min_width=10)
+    claude_tier_wrap, _ = _option_menu(tier_col, claude_tier_var, PRESET_NAMES, FONT_BODY_SM, min_width=10)
     claude_tier_wrap.pack(anchor="w", pady=(4, 0))
 
     # Limit
@@ -254,15 +254,15 @@ def run_settings_window(
 
     tier_col2 = tk.Frame(chatgpt_row, bg=_CANVAS)
     tier_col2.pack(side="left", padx=(0, 20))
-    _field_label(tier_col2, "티어", FONT_CAPTION)
+    _field_label(tier_col2, "Preset", FONT_CAPTION)
     chatgpt_tier_var = tk.StringVar(value=cfg.chatgpt_tier)
     chatgpt_limit_var = tk.StringVar(value=f"{cfg.chatgpt_limit:.2f}")
 
     def _on_chatgpt_tier(*_):
-        chatgpt_limit_var.set(f"{CHATGPT_TIERS.get(chatgpt_tier_var.get(), 5000.0):.2f}")
+        chatgpt_limit_var.set(f"{CHATGPT_PRESETS.get(chatgpt_tier_var.get(), 446.0):.2f}")
 
     chatgpt_tier_var.trace_add("write", _on_chatgpt_tier)
-    chatgpt_tier_wrap, _ = _option_menu(tier_col2, chatgpt_tier_var, TIER_NAMES, FONT_BODY_SM, min_width=10)
+    chatgpt_tier_wrap, _ = _option_menu(tier_col2, chatgpt_tier_var, PRESET_NAMES, FONT_BODY_SM, min_width=10)
     chatgpt_tier_wrap.pack(anchor="w", pady=(4, 0))
 
     limit_col2 = tk.Frame(chatgpt_row, bg=_CANVAS)

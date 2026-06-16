@@ -12,10 +12,10 @@ logger = logging.getLogger(__name__)
 CONFIG_VERSION = 1
 
 _DEFAULTS = {
-    "claude_tier": "Tier4",
-    "claude_limit": 5000.0,
-    "chatgpt_tier": "Tier4",
-    "chatgpt_limit": 5000.0,
+    "claude_tier": "Preset 4",
+    "claude_limit": 446.0,
+    "chatgpt_tier": "Preset 4",
+    "chatgpt_limit": 446.0,
     "update_interval": 60,
     "auto_start": False,
     "config_version": CONFIG_VERSION,
