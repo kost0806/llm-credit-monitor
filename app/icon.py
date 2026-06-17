@@ -71,16 +71,10 @@ def _pick_bg(label: str) -> str:
 def _measure(draw: ImageDraw.ImageDraw, label: str, font) -> tuple[int, int]:
     """Returns (width, height) of label rendered with font."""
     try:
-        # textlength sums FT_Get_Advance per character and is reliable across
-        # environments where textbbox's right-edge can mis-report multi-char width
-        # (observed in PyInstaller bundles with certain libfreetype builds).
-        w = round(draw.textlength(label, font=font))
-        bbox = draw.textbbox((0, 0), label, font=font)
-        h = bbox[3] - bbox[1]
-        return w, h
-    except AttributeError:
         bbox = draw.textbbox((0, 0), label, font=font)
         return bbox[2] - bbox[0], bbox[3] - bbox[1]
+    except Exception:
+        return len(label) * 8, 12
 
 
 def _best_font_size(draw: ImageDraw.ImageDraw, label: str, max_w: int, max_h: int) -> int:
@@ -116,16 +110,8 @@ def make_icon(label: str) -> Image.Image:
     size = _best_font_size(draw, label, max_w, max_h)
     font = _load_font(size)
 
-    w, h = _measure(draw, label, font)
-    try:
-        bbox = draw.textbbox((0, 0), label, font=font)
-        x = (ICON_SIZE - w) / 2 - bbox[0]
-        y = (ICON_SIZE - h) / 2 - bbox[1]
-    except AttributeError:
-        x = (ICON_SIZE - w) / 2
-        y = (ICON_SIZE - h) / 2
-
-    draw.text((x, y), label, fill="white", font=font)
+    # Draw the text centered at (ICON_SIZE/2, ICON_SIZE/2) using the middle-middle anchor
+    draw.text((ICON_SIZE / 2, ICON_SIZE / 2), label, fill="white", font=font, anchor="mm")
 
     if sys.platform != "win32":
         img = img.resize((_LINUX_TRAY_SIZE, _LINUX_TRAY_SIZE), Image.LANCZOS)
