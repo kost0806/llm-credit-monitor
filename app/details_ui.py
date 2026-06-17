@@ -161,7 +161,8 @@ def run_details_window(worker, open_flag: threading.Event) -> None:
         tk.Label(chart_header, text=label, bg=_CANVAS, fg=_MUTED,
                  font=FONT_BODY_SM).pack(side="right", padx=(8, 2))
 
-    fig, ax = plt.subplots(figsize=(8.8, 2.6), dpi=96)
+    fig, ax = plt.subplots(figsize=(8.8, 2.6), dpi=72,
+                           constrained_layout=True)
     fig.patch.set_facecolor(_CANVAS)
     ax.set_facecolor(_CANVAS)
 
@@ -247,7 +248,10 @@ def run_details_window(worker, open_flag: threading.Event) -> None:
             ax.margins(y=0.18)
 
         fig.tight_layout(pad=1.0)
-        canvas.draw()
+        try:
+            canvas.draw()
+        except RuntimeError as e:
+            logger.warning("Chart render failed: %s", e)
 
     def _render_table(claude_models: dict, chatgpt_models: dict):
         for item in tree.get_children():
