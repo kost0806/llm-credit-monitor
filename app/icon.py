@@ -70,20 +70,21 @@ def _pick_bg(label: str) -> str:
 
 def _measure(draw: ImageDraw.ImageDraw, label: str, font) -> tuple[int, int]:
     """Returns (width, height) of label rendered with font."""
-    w: int | None = None
-    h: int | None = None
+    w = None
+    h = None
     try:
         w = round(draw.textlength(label, font=font))
     except Exception:
         pass
     try:
         bbox = draw.textbbox((0, 0), label, font=font)
-        bw = bbox[2] - bbox[0]
         bh = bbox[3] - bbox[1]
-        # Take the larger width: buggy environments under-report (e.g. first-char only).
-        w = max(w, bw) if w is not None else bw
         if bh > 0:
             h = bh
+        if w is None:
+            bw = bbox[2] - bbox[0]
+            if bw > 0:
+                w = bw
     except Exception:
         pass
     if w is not None and h is not None:
@@ -91,7 +92,10 @@ def _measure(draw: ImageDraw.ImageDraw, label: str, font) -> tuple[int, int]:
     if hasattr(font, "getsize"):
         try:
             gw, gh = font.getsize(label)
-            return (max(w, gw) if w is not None else gw), (h if h is not None else gh)
+            if w is None:
+                w = gw
+            if h is None:
+                h = gh
         except Exception:
             pass
     return (w if w is not None else len(label) * 8), (h if h is not None else 12)
