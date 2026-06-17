@@ -108,8 +108,8 @@ def make_icon(label: str) -> Image.Image:
     img = Image.new("RGBA", (ICON_SIZE, ICON_SIZE), bg)
     draw = ImageDraw.Draw(img)
 
-    # Leave a small margin so the text doesn't bleed to the edge
-    margin = 4
+    # Leave a margin so the text doesn't bleed to the edge or look cut off on high-DPI scaling
+    margin = 10 if sys.platform == "win32" else 15
     max_w = ICON_SIZE - margin * 2
     max_h = ICON_SIZE - margin * 2
 

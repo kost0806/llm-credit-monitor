@@ -71,6 +71,36 @@ if sys.platform != "win32" and sys.platform != "darwin":
     except Exception as e:
         logger.debug("Failed to patch pystray Xorg backend logging: %s", e)
 
+    # AppIndicator backend
+    try:
+        import pystray._appindicator
+        if hasattr(pystray._appindicator.Icon, "_create_default_menu"):
+            def _patched_create_default_menu(self):
+                logger.debug("[TRAY] Creating default menu for AppIndicator")
+                menu = pystray._appindicator.Gtk.Menu.new()
+                if self.menu is not None:
+                    default_item = None
+                    for item in self.menu.items:
+                        if item.default:
+                            default_item = item
+                            break
+                    if default_item is None:
+                        # Fallback to the first item if no default is specified
+                        for item in self.menu.items:
+                            default_item = item
+                            break
+                    if default_item is not None:
+                        menu.append(self._create_menu_item(default_item))
+                else:
+                    menu.append(self._create_menu_item(
+                        pystray._appindicator._base.MenuItem(self.name, lambda _: None)))
+                menu.show_all()
+                return menu
+            pystray._appindicator.Icon._create_default_menu = _patched_create_default_menu
+            logger.debug("Successfully patched pystray AppIndicator backend")
+    except Exception as e:
+        logger.debug("Failed to patch pystray AppIndicator backend: %s", e)
+
 # Use ASCII-safe bar characters when not on Windows.
 if sys.platform == "win32":
     _FILLED, _EMPTY, _DASH = "█", "░", "—"
@@ -152,7 +182,7 @@ class TrayApp:
             target=self._update_loop, name="IconUpdater", daemon=True
         )
         update_thread.start()
-        logger.debug("Starting pystray icon")
+        logger.debug("Starting pystray icon with backend class: %s", type(self._icon).__module__)
         self._icon.run()
 
     # ── Menu ─────────────────────────────────────────────────────────────────
