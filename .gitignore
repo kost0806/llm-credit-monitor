@@ -11,11 +11,16 @@ build/__pycache__/
 
 # PyInstaller
 *.spec.bak
+LLMCreditMonitorDir.spec
 build/*.toc
 build/*.pkg
 build/*.exe
 build/warn-*.txt
 build/xref-*.html
+build/LLMCreditMonitorDir/
+
+# Font bundled by build script at build time (not stored in repo)
+assets/DejaVuSansMono-Bold.ttf
 
 # IDE
 .idea/
