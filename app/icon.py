@@ -70,12 +70,14 @@ def _pick_bg(label: str) -> str:
 
 def _measure(draw: ImageDraw.ImageDraw, label: str, font) -> tuple[int, int]:
     """Returns (width, height) of label rendered with font."""
-    if hasattr(draw, "textbbox"):
-        try:
-            bbox = draw.textbbox((0, 0), label, font=font)
-            return bbox[2] - bbox[0], bbox[3] - bbox[1]
-        except Exception:
-            pass
+    try:
+        # textlength sums FT_Get_Advance per glyph — reliable even in PyInstaller
+        # bundles where textbbox's right-edge can mis-report multi-char width.
+        w = round(draw.textlength(label, font=font))
+        bbox = draw.textbbox((0, 0), label, font=font)
+        return w, bbox[3] - bbox[1]
+    except Exception:
+        pass
     if hasattr(font, "getsize"):
         try:
             return font.getsize(label)
@@ -117,32 +119,7 @@ def make_icon(label: str) -> Image.Image:
     size = _best_font_size(draw, label, max_w, max_h)
     font = _load_font(size)
 
-    w, h = _measure(draw, label, font)
-
-    # Calculate starting x and y offsets
-    offset_x, offset_y = 0, 0
-    if hasattr(draw, "textbbox"):
-        try:
-            bbox = draw.textbbox((0, 0), label, font=font)
-            offset_x, offset_y = bbox[0], bbox[1]
-        except Exception:
-            pass
-    elif hasattr(font, "getoffset"):
-        try:
-            offset_x, offset_y = font.getoffset(label)
-        except Exception:
-            pass
-
-    # Safeguard against weird font metrics offsets (preventing off-screen shift)
-    if not (-20 < offset_x < 20):
-        offset_x = 0
-    if not (-20 < offset_y < 20):
-        offset_y = 0
-
-    x = (ICON_SIZE - w) / 2 - offset_x
-    y = (ICON_SIZE - h) / 2 - offset_y
-
-    draw.text((x, y), label, fill="white", font=font)
+    draw.text((ICON_SIZE / 2, ICON_SIZE / 2), label, fill="white", font=font, anchor="mm")
 
     if sys.platform != "win32":
         img = img.resize((_LINUX_TRAY_SIZE, _LINUX_TRAY_SIZE), Image.LANCZOS)
