@@ -12,6 +12,18 @@ from app.worker import UsageSnapshot, UsageWorker
 
 logger = logging.getLogger(__name__)
 
+# Linux system tray left-click fix for Gtk.StatusIcon backend
+if sys.platform != "win32" and sys.platform != "darwin":
+    try:
+        import pystray._gtk
+        if hasattr(pystray._gtk.Icon, "_on_status_icon_activate"):
+            def _patched_on_status_icon_activate(self, status_icon):
+                if hasattr(self, "_on_status_icon_popup_menu"):
+                    self._on_status_icon_popup_menu(status_icon, 1, 0)
+            pystray._gtk.Icon._on_status_icon_activate = _patched_on_status_icon_activate
+    except Exception as e:
+        logger.warning("Failed to patch pystray GTK backend: %s", e)
+
 # X11 backend (Linux without libappindicator) only supports latin-1.
 # Use ASCII-safe bar characters when not on Windows.
 if sys.platform == "win32":
