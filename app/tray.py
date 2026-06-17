@@ -24,10 +24,37 @@ if sys.platform != "win32" and sys.platform != "darwin":
             pystray._gtk.Icon._on_status_icon_activate = _patched_on_status_icon_activate
 
         if hasattr(pystray._gtk.Icon, "_on_status_icon_popup_menu"):
-            _orig_popup = pystray._gtk.Icon._on_status_icon_popup_menu
             def _patched_on_status_icon_popup_menu(self, status_icon, button, activate_time):
                 logger.debug("[TRAY] Popup menu requested (right-clicked) - GTK StatusIcon")
-                _orig_popup(self, status_icon, button, activate_time)
+                if not hasattr(self, "_menu_handle") or not self._menu_handle:
+                    logger.debug("[TRAY] Menu handle is None/missing. Creating menu now...")
+                    try:
+                        self._menu_handle = self._create_menu(self.menu)
+                    except Exception as e:
+                        logger.error("[TRAY] Failed to create menu: %s", e)
+
+                if hasattr(self, "_menu_handle") and self._menu_handle:
+                    logger.debug("[TRAY] Showing popup menu (button=%s, time=%s)", button, activate_time)
+                    try:
+                        # Attempt to popup with the actual button and activate_time
+                        self._menu_handle.popup(
+                            None, None, pystray._gtk.Gtk.StatusIcon.position_menu,
+                            self._status_icon, button, activate_time)
+                        logger.debug("[TRAY] Menu popup completed")
+                        return
+                    except Exception as e:
+                        logger.warning("[TRAY] Popup with button/time failed: %s. Retrying with fallback...", e)
+
+                    try:
+                        # Fallback to pystray's original popup args (button=0, time=current_event_time)
+                        self._menu_handle.popup(
+                            None, None, pystray._gtk.Gtk.StatusIcon.position_menu,
+                            self._status_icon, 0, pystray._gtk.Gtk.get_current_event_time())
+                        logger.debug("[TRAY] Fallback menu popup completed")
+                    except Exception as e:
+                        logger.error("[TRAY] Fallback popup also failed: %s", e)
+                else:
+                    logger.error("[TRAY] Menu handle could not be initialized")
             pystray._gtk.Icon._on_status_icon_popup_menu = _patched_on_status_icon_popup_menu
     except Exception as e:
         logger.debug("Failed to patch pystray GTK backend logging: %s", e)
