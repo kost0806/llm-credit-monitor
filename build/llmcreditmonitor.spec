@@ -4,16 +4,58 @@ from pathlib import Path
 
 block_cipher = None
 
+
+def _tray_font() -> str | None:
+    """
+    Locate a scalable DejaVuSansMono-Bold.ttf to bundle as the tray-icon font.
+
+    The tray icon draws the usage percentage with this font; without a scalable
+    TTF, app/icon.py falls back to PIL's fixed bitmap font, which becomes
+    invisible after the Linux tray downscale.  Resolve it from a source that is
+    guaranteed to exist at build time so every build (standalone, .deb, Windows)
+    bundles it regardless of build order or the host's system fonts:
+      1. assets/ (e.g. copied by build_linux.sh)
+      2. matplotlib's bundled copy (matplotlib is a hard dependency)
+      3. common system font paths
+    """
+    candidates = [Path('../assets/DejaVuSansMono-Bold.ttf')]
+    try:
+        import matplotlib
+        candidates.append(
+            Path(matplotlib.get_data_path()) / 'fonts' / 'ttf' / 'DejaVuSansMono-Bold.ttf'
+        )
+    except Exception:
+        pass
+    candidates += [
+        Path('/usr/share/fonts/truetype/dejavu/DejaVuSansMono-Bold.ttf'),
+        Path('/usr/share/fonts/TTF/DejaVuSansMono-Bold.ttf'),
+    ]
+    for p in candidates:
+        if p.exists():
+            return str(p)
+    return None
+
+
+_datas = [
+    ('../core/ccusage.py', 'core'),
+    ('../core/ccusage_pricing.py', 'core'),
+    ('../core/ccusage_db.py', 'core'),
+    ('../assets', 'assets'),
+]
+
+_font = _tray_font()
+if _font:
+    # Place it directly under assets/ so app/icon._font_path() finds it first.
+    _datas.append((_font, 'assets'))
+else:
+    print('WARNING: DejaVuSansMono-Bold.ttf not found; tray icon will use the '
+          'bitmap-font fallback', file=sys.stderr)
+
 a = Analysis(
     ['../app/main.py'],
     pathex=[str(Path('..').resolve())],
     binaries=[],
-    datas=[
-        ('../core/ccusage.py', 'core'),
-        ('../core/ccusage_pricing.py', 'core'),
-        ('../core/ccusage_db.py', 'core'),
-        ('../assets', 'assets'),
-    ],
+    datas=_datas,
     hiddenimports=[
         'ccusage',
         'ccusage_pricing',
