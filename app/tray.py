@@ -11,10 +11,39 @@ from app.icon import make_icon
 from app.worker import UsageSnapshot, UsageWorker
 
 logger = logging.getLogger(__name__)
+# Linux system tray click logging patches
+if sys.platform != "win32" and sys.platform != "darwin":
+    # GTK backend (Gtk.StatusIcon)
+    try:
+        import pystray._gtk
+        if hasattr(pystray._gtk.Icon, "_on_status_icon_activate"):
+            _orig_activate = pystray._gtk.Icon._on_status_icon_activate
+            def _patched_on_status_icon_activate(self, status_icon):
+                logger.debug("[TRAY] Activated (left-clicked) - GTK StatusIcon")
+                _orig_activate(self, status_icon)
+            pystray._gtk.Icon._on_status_icon_activate = _patched_on_status_icon_activate
 
+        if hasattr(pystray._gtk.Icon, "_on_status_icon_popup_menu"):
+            _orig_popup = pystray._gtk.Icon._on_status_icon_popup_menu
+            def _patched_on_status_icon_popup_menu(self, status_icon, button, activate_time):
+                logger.debug("[TRAY] Popup menu requested (right-clicked) - GTK StatusIcon")
+                _orig_popup(self, status_icon, button, activate_time)
+            pystray._gtk.Icon._on_status_icon_popup_menu = _patched_on_status_icon_popup_menu
+    except Exception as e:
+        logger.debug("Failed to patch pystray GTK backend logging: %s", e)
 
+    # Xorg backend
+    try:
+        import pystray._xorg
+        if hasattr(pystray._xorg.Icon, "_on_button_press"):
+            _orig_xorg_press = pystray._xorg.Icon._on_button_press
+            def _patched_on_button_press(self, event):
+                logger.debug("[TRAY] Button press event (button %s) - Xorg", event.detail)
+                _orig_xorg_press(self, event)
+            pystray._xorg.Icon._on_button_press = _patched_on_button_press
+    except Exception as e:
+        logger.debug("Failed to patch pystray Xorg backend logging: %s", e)
 
-# X11 backend (Linux without libappindicator) only supports latin-1.
 # Use ASCII-safe bar characters when not on Windows.
 if sys.platform == "win32":
     _FILLED, _EMPTY, _DASH = "█", "░", "—"
