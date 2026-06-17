@@ -83,37 +83,66 @@ def _pick_bg(label: str) -> str:
     return _COLORS["high"]
 
 
-def _measure(draw: ImageDraw.ImageDraw, label: str, font) -> tuple[int, int]:
-    """Returns (width, height) of label rendered with font."""
-    w = None
-    h = None
+def _char_advance(draw: ImageDraw.ImageDraw, ch: str, font) -> float:
+    """Advance width of a single glyph.
+
+    Measured one character at a time on purpose: some PyInstaller/libfreetype
+    builds under-report the advance of a *multi-character* string (returning
+    roughly the first glyph's width only), which is exactly what made the tray
+    icon show a single digit.  Single-glyph measurement is unaffected by that
+    layout bug.
+    """
     try:
-        w = round(draw.textlength(label, font=font))
+        return draw.textlength(ch, font=font)
     except Exception:
         pass
     try:
-        bbox = draw.textbbox((0, 0), label, font=font)
-        bh = bbox[3] - bbox[1]
-        if bh > 0:
-            h = bh
-        if w is None:
-            bw = bbox[2] - bbox[0]
-            if bw > 0:
-                w = bw
+        b = draw.textbbox((0, 0), ch, font=font)
+        return b[2] - b[0]
     except Exception:
         pass
-    if w is not None and h is not None:
-        return w, h
     if hasattr(font, "getsize"):
         try:
-            gw, gh = font.getsize(label)
-            if w is None:
-                w = gw
-            if h is None:
-                h = gh
+            return font.getsize(ch)[0]
         except Exception:
             pass
-    return (w if w is not None else len(label) * 8), (h if h is not None else 12)
+    return 8.0
+
+
+def _vertical_extent(draw: ImageDraw.ImageDraw, label: str, font) -> tuple[float, float]:
+    """(top, bottom) of the tallest glyph extent in label, relative to a y=0 origin."""
+    tops: list[float] = []
+    bottoms: list[float] = []
+    for ch in label:
+        try:
+            b = draw.textbbox((0, 0), ch, font=font)
+            tops.append(b[1])
+            bottoms.append(b[3])
+        except Exception:
+            pass
+    if tops and bottoms:
+        return min(tops), max(bottoms)
+    if hasattr(font, "getsize"):
+        try:
+            return 0.0, float(font.getsize(label)[1])
+        except Exception:
+            pass
+    return 0.0, 12.0
+
+
+def _measure(draw: ImageDraw.ImageDraw, label: str, font) -> tuple[int, int]:
+    """Returns (width, height) of label rendered with font.
+
+    Width is the sum of per-glyph advances rather than a single multi-character
+    measurement, so it stays correct even where the bundled Pillow/libfreetype
+    mis-reports multi-character width.
+    """
+    w = sum(_char_advance(draw, ch, font) for ch in label)
+    top, bottom = _vertical_extent(draw, label, font)
+    h = bottom - top
+    if h <= 0:
+        h = 12
+    return round(w), round(h)
 
 
 def _best_font_size(draw: ImageDraw.ImageDraw, label: str, max_w: int, max_h: int) -> int:
@@ -130,6 +159,27 @@ def _best_font_size(draw: ImageDraw.ImageDraw, label: str, max_w: int, max_h: in
         else:
             hi = mid - 1
     return best
+
+
+def _draw_centered(draw: ImageDraw.ImageDraw, label: str, font, cx: float, cy: float) -> None:
+    """Draw label centered at (cx, cy), placing each glyph by hand.
+
+    ``anchor="mm"`` centers the whole string using Pillow's internal
+    multi-character layout, which is the same path that mis-reports width in
+    some PyInstaller bundles — so it would push a digit off-canvas even when the
+    font size is right.  Laying out each glyph from its own advance keeps the
+    number centered regardless of that bug.
+    """
+    advances = [_char_advance(draw, ch, font) for ch in label]
+    total_w = sum(advances)
+    top, bottom = _vertical_extent(draw, label, font)
+    # Default text anchor is "la" (left / ascender top): a glyph drawn at y has
+    # its measured box at [y+top, y+bottom], so this y centers that box on cy.
+    y = cy - (top + bottom) / 2
+    x = cx - total_w / 2
+    for ch, adv in zip(label, advances):
+        draw.text((x, y), ch, fill="white", font=font)
+        x += adv
 
 
 def _draw_label_scaled(img: Image.Image, label: str, max_w: int, max_h: int) -> None:
@@ -181,7 +231,7 @@ def make_icon(label: str) -> Image.Image:
     if _font_path() is not None:
         size = _best_font_size(draw, label, max_w, max_h)
         font = _load_font(size)
-        draw.text((ICON_SIZE / 2, ICON_SIZE / 2), label, fill="white", font=font, anchor="mm")
+        _draw_centered(draw, label, font, ICON_SIZE / 2, ICON_SIZE / 2)
     else:
         # No scalable TTF available — keep the digits visible with the bitmap font.
         _draw_label_scaled(img, label, max_w, max_h)
