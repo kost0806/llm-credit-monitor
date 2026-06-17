@@ -59,7 +59,14 @@ def _load_font(size: int) -> ImageFont.FreeTypeFont | ImageFont.ImageFont:
     path = _font_path()
     if path is not None:
         try:
-            return ImageFont.truetype(str(path), size)
+            # Force the BASIC layout engine instead of the default RAQM
+            # (HarfBuzz/FriBidi) one.  Our labels are plain ASCII digits/letters
+            # that need no complex shaping or bidi, and RAQM's native deps are
+            # often bundled half-broken by PyInstaller, which mangles the
+            # multi-glyph run and drops the leading digit in the built app.
+            return ImageFont.truetype(
+                str(path), size, layout_engine=ImageFont.Layout.BASIC
+            )
         except Exception:
             logger.warning("Failed to load TTF font %s; falling back", path)
 
