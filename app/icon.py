@@ -70,11 +70,18 @@ def _pick_bg(label: str) -> str:
 
 def _measure(draw: ImageDraw.ImageDraw, label: str, font) -> tuple[int, int]:
     """Returns (width, height) of label rendered with font."""
-    try:
-        bbox = draw.textbbox((0, 0), label, font=font)
-        return bbox[2] - bbox[0], bbox[3] - bbox[1]
-    except Exception:
-        return len(label) * 8, 12
+    if hasattr(draw, "textbbox"):
+        try:
+            bbox = draw.textbbox((0, 0), label, font=font)
+            return bbox[2] - bbox[0], bbox[3] - bbox[1]
+        except Exception:
+            pass
+    if hasattr(font, "getsize"):
+        try:
+            return font.getsize(label)
+        except Exception:
+            pass
+    return len(label) * 8, 12
 
 
 def _best_font_size(draw: ImageDraw.ImageDraw, label: str, max_w: int, max_h: int) -> int:
@@ -110,8 +117,32 @@ def make_icon(label: str) -> Image.Image:
     size = _best_font_size(draw, label, max_w, max_h)
     font = _load_font(size)
 
-    # Draw the text centered at (ICON_SIZE/2, ICON_SIZE/2) using the middle-middle anchor
-    draw.text((ICON_SIZE / 2, ICON_SIZE / 2), label, fill="white", font=font, anchor="mm")
+    w, h = _measure(draw, label, font)
+
+    # Calculate starting x and y offsets
+    offset_x, offset_y = 0, 0
+    if hasattr(draw, "textbbox"):
+        try:
+            bbox = draw.textbbox((0, 0), label, font=font)
+            offset_x, offset_y = bbox[0], bbox[1]
+        except Exception:
+            pass
+    elif hasattr(font, "getoffset"):
+        try:
+            offset_x, offset_y = font.getoffset(label)
+        except Exception:
+            pass
+
+    # Safeguard against weird font metrics offsets (preventing off-screen shift)
+    if not (-20 < offset_x < 20):
+        offset_x = 0
+    if not (-20 < offset_y < 20):
+        offset_y = 0
+
+    x = (ICON_SIZE - w) / 2 - offset_x
+    y = (ICON_SIZE - h) / 2 - offset_y
+
+    draw.text((x, y), label, fill="white", font=font)
 
     if sys.platform != "win32":
         img = img.resize((_LINUX_TRAY_SIZE, _LINUX_TRAY_SIZE), Image.LANCZOS)
